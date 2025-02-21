@@ -33,8 +33,6 @@ class HightouchTriggerSyncOperator(BaseOperator):
     :type synchronous: bool
     :param deferrable: Whether to defer the execution of the operator
     :type deferrable: bool
-    :param end_from_trigger: Whether to end the task from the trigger
-    :type end_from_trigger: bool
     :param error_on_warning: Should sync warnings be treated as errors or ignored?
     :type error_on_warning: bool
     :param wait_seconds: Time to wait in between subsequent polls to the API.
@@ -50,7 +48,7 @@ class HightouchTriggerSyncOperator(BaseOperator):
         self,
         sync_id: Optional[str] = None,
         sync_slug: Optional[str] = None,
-        workspace_id: Optional[str] = None,
+        workspace_id: Optional[str] = "{Workspace Id}",
         connection_id: str = "hightouch_default",
         api_version: str = "v3",
         synchronous: bool = True,
