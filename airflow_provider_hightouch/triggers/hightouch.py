@@ -135,6 +135,7 @@ class HightouchTrigger(BaseTrigger):
                         f"{self.sync_run_url} exceeded DAG timeout of {self.timeout} seconds."
                     )
                     yield TaskFailedEvent()
+                    return
 
             except Exception as e:
                 self.log.error("Error while checking sync status: %s", str(e))
