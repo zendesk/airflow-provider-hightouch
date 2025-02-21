@@ -37,7 +37,6 @@ class HightouchTrigger(BaseTrigger):
         connection_id: str,
         timeout: float,
         poll_interval: float = 4.0,
-        end_from_trigger: bool = True,
     ) -> None:
         """
         Initializes the HightouchTrigger with the provided parameters.
@@ -59,7 +58,6 @@ class HightouchTrigger(BaseTrigger):
         self.connection_id = connection_id
         self.poll_interval = poll_interval
         self.timeout = timeout
-        self.end_from_trigger = end_from_trigger
         self.hook = HightouchAsyncHook(hightouch_conn_id=self.connection_id)
 
     def serialize(self) -> Tuple[str, Dict[str, Any]]:
@@ -80,7 +78,7 @@ class HightouchTrigger(BaseTrigger):
                 "poll_interval": self.poll_interval,
                 "timeout": self.timeout,
                 "workspace_id": self.workspace_id,
-                "end_from_trigger": self.end_from_trigger,
+                "end_from_trigger": True,
             },
         )
 
