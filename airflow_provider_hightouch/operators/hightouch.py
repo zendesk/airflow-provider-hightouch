@@ -33,6 +33,8 @@ class HightouchTriggerSyncOperator(BaseOperator):
     :type synchronous: bool
     :param deferrable: Whether to defer the execution of the operator
     :type deferrable: bool
+    :param end_from_trigger: Whether to end the task from the trigger
+    :type end_from_trigger: bool
     :param error_on_warning: Should sync warnings be treated as errors or ignored?
     :type error_on_warning: bool
     :param wait_seconds: Time to wait in between subsequent polls to the API.
@@ -53,6 +55,7 @@ class HightouchTriggerSyncOperator(BaseOperator):
         api_version: str = "v3",
         synchronous: bool = True,
         deferrable: bool = False,
+        end_from_triggger: bool = True,
         error_on_warning: bool = False,
         wait_seconds: float = 3,
         timeout: int = 3600,
@@ -67,6 +70,7 @@ class HightouchTriggerSyncOperator(BaseOperator):
         self.error_on_warning = error_on_warning
         self.synchronous = synchronous
         self.deferrable = deferrable
+        self.end_from_trigger = end_from_triggger
         self.wait_seconds = wait_seconds
         self.timeout = timeout
 
@@ -129,7 +133,6 @@ class HightouchTriggerSyncOperator(BaseOperator):
 
         :return: None
         """
-
         self.log.info("Using deferrable execution to trigger sync.")
         # Validate that exactly one of sync_id or sync_slug is provided
         if (self.sync_id is None) == (self.sync_slug is None):
@@ -161,33 +164,8 @@ class HightouchTriggerSyncOperator(BaseOperator):
                 connection_id=self.hightouch_conn_id,
                 poll_interval=self.wait_seconds,
                 timeout=self.timeout,
+                end_from_trigger=self.end_from_trigger,
             ),
             method_name=None,
         )
         return
-
-    # def execute_complete(self, context: Context, event: dict):
-    #     """
-    #     Resumes execution after the trigger completes.
-
-    #     This method is called after the Hightouch sync completes. It processes the
-    #     event containing the sync status and raises exceptions if the sync fails or
-    #     times out.
-
-    #     Args:
-    #         context (Context): The context in which the operator is executed.
-    #         event (dict): The event containing the sync status.
-
-    #     Raises:
-    #         AirflowException: If the sync fails or times out.
-    #     """
-    #     status = event.get("status")
-    #     message = event.get("message")
-
-    #     if status == "success":
-    #         self.log.info(message)
-    #         return event.get("sync_id", None)
-    #     elif status in ["failed", "timeout"]:
-    #         raise AirflowException(message)
-    #     else:
-    #         raise AirflowException(message)
