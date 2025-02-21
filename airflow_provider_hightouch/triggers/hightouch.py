@@ -124,7 +124,7 @@ class HightouchTrigger(BaseTrigger):
                 elif status in ["failed", "error"]:
                     self.log.info(
                         f"{self.sync_run_url} finished with status {status}!\n"
-                        f"Sync Error: {response['error']}"
+                        f"Sync Error: {response[0]['error']}"
                     )
                     yield TaskFailedEvent()
                     return
