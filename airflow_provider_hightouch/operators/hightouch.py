@@ -33,6 +33,8 @@ class HightouchTriggerSyncOperator(BaseOperator):
     :type synchronous: bool
     :param deferrable: Whether to defer the execution of the operator
     :type deferrable: bool
+    :param end_from_trigger: Whether to end the task from the trigger
+    :type end_from_trigger: bool
     :param error_on_warning: Should sync warnings be treated as errors or ignored?
     :type error_on_warning: bool
     :param wait_seconds: Time to wait in between subsequent polls to the API.
@@ -82,9 +84,6 @@ class HightouchTriggerSyncOperator(BaseOperator):
                 "One of sync_id or sync_slug must be provided to trigger a sync"
             )
 
-        if self.deferrable:
-            return self.handle_deferrable_execution(hook)
-
         if self.synchronous:
             self.log.info("Start synchronous request to run a sync.")
             hightouch_output = hook.sync_and_poll(
@@ -106,20 +105,23 @@ class HightouchTriggerSyncOperator(BaseOperator):
                 self.log.warning(hightouch_output)
 
         else:
-            self.log.info("Start async request to run a sync.")
-            request_id = hook.start_sync(self.sync_id, self.sync_slug)
-            sync = self.sync_id or self.sync_slug
-            self.log.info(
-                "Successfully created request %s to start sync: %s", request_id, sync
-            )
-            return request_id
+            if self.deferrable:
+                return self.handle_deferrable_execution(hook)
+            else:
+                self.log.info("Start async request to run a sync.")
+                request_id = hook.start_sync(self.sync_id, self.sync_slug)
+                sync = self.sync_id or self.sync_slug
+                self.log.info(
+                    "Successfully created request %s to start sync: %s",
+                    request_id,
+                    sync,
+                )
+                return request_id
 
     def handle_deferrable_execution(self, hook: HightouchHook) -> str:
         """
         Handle the deferrable execution logic for triggering a Hightouch sync.
 
-        This method checks whether to trigger a Hightouch sync using either a sync ID or a sync slug.
-        It validates that exactly one of the two is provided and then initiates the sync asynchronously.
         The method defers execution until the sync completes, using a trigger to monitor the status.
 
         :param hook: An instance of HightouchHook used to interact with the Hightouch API.
@@ -130,11 +132,6 @@ class HightouchTriggerSyncOperator(BaseOperator):
         :return: None
         """
         self.log.info("Using deferrable execution to trigger sync.")
-        # Validate that exactly one of sync_id or sync_slug is provided
-        if (self.sync_id is None) == (self.sync_slug is None):
-            raise AirflowException(
-                "Exactly one of sync_id or sync_slug must be provided."
-            )
 
         if self.sync_slug:
             self.log.info(
@@ -148,18 +145,19 @@ class HightouchTriggerSyncOperator(BaseOperator):
             )
             sync_request_id = hook.start_sync(sync_id=self.sync_id)
 
-        self.log.info(
-            f"Successfully started sync {self.sync_id}. Deferring execution..."
-        )
+        self.sync_run_url = f"https://app.hightouch.com/{self.workspace_id}/syncs/{self.sync_id}/runs/{sync_request_id}"
+
+        self.log.info(f"Started sync {self.sync_run_url} Deferring execution...")
         self.defer(
             trigger=HightouchTrigger(
-                workspace_id=self.workspace_id,
+                sync_run_url=self.sync_run_url,
                 sync_id=self.sync_id,
                 sync_request_id=sync_request_id,
                 sync_slug=self.sync_slug,
                 connection_id=self.hightouch_conn_id,
-                poll_interval=self.wait_seconds,
                 timeout=self.timeout,
+                end_from_trigger=True,
+                poll_interval=self.wait_seconds,
             ),
             method_name=None,
         )
