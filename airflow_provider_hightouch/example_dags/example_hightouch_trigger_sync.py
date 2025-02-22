@@ -5,7 +5,7 @@ from airflow.operators.latest_only import LatestOnlyOperator
 from airflow.utils.dates import days_ago
 
 from airflow_provider_hightouch.operators.hightouch import HightouchTriggerSyncOperator
-from airflow_provider_hightouch.sensors.hightouch import HightouchMonitorSyncRunOperator
+from airflow_provider_hightouch.sensors.hightouch import HightouchSyncRunSensor
 
 args = {"owner": "airflow"}
 
@@ -29,7 +29,7 @@ with DAG(
         task_id="run_sync", sync_id=5, synchronous=True, error_on_warning=True
     )
 
-    sync_sensor = HightouchMonitorSyncRunOperator(
+    sync_sensor = HightouchSyncRunSensor(
         task_id="sync_sensor",
         sync_run_id="123456",
         sync_id="123")
