@@ -101,6 +101,14 @@ class HightouchTrigger(BaseTrigger):
 
         while True:
 
+            # Check for timeout
+            if asyncio.get_event_loop().time() - start_time > self.timeout:
+                self.log.error(
+                    f"{self.sync_run_url} exceeded DAG timeout of {self.timeout} seconds."
+                )
+                yield TaskFailedEvent()
+                return
+
             try:
                 # Fetch the current sync status
                 response = await self.hook.get_sync_run_details(
@@ -121,18 +129,11 @@ class HightouchTrigger(BaseTrigger):
                     )
                     await asyncio.sleep(self.poll_interval)
 
-                elif status in ["failed", "error"]:
-                    self.log.info(
+                # Will capture "failed" and "error" statuses, along with new statuses
+                else:
+                    self.log.error(
                         f"{self.sync_run_url} finished with status {status}!\n"
                         f"Sync Error: {response[0]['error']}"
-                    )
-                    yield TaskFailedEvent()
-                    return
-
-                # Check for timeout
-                if asyncio.get_event_loop().time() - start_time > self.timeout:
-                    self.log.info(
-                        f"{self.sync_run_url} exceeded DAG timeout of {self.timeout} seconds."
                     )
                     yield TaskFailedEvent()
                     return
