@@ -133,6 +133,7 @@ class HightouchTriggerSyncOperator(BaseOperator):
                         timeout=self.timeout,
                         end_from_trigger=True,
                         poll_interval=self.wait_seconds,
+                        error_on_warning=self.error_on_warning,
                     ),
                     method_name=None,
                 )

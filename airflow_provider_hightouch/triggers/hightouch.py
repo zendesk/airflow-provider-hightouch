@@ -38,6 +38,7 @@ class HightouchTrigger(BaseTrigger):
         timeout: float,
         end_from_trigger: bool = True,
         poll_interval: float = 4.0,
+        error_on_warning: bool = False,
     ) -> None:
         """
         Initializes the HightouchTrigger with the provided parameters.
@@ -51,6 +52,7 @@ class HightouchTrigger(BaseTrigger):
             timeout (float): The maximum time (in seconds) to wait before timing out.
             end_from_trigger (bool): Allows for task to complete from the trigger. Default is true.
             poll_interval (float): The time (in seconds) to wait between status checks.
+            error_on_warning (bool): Whether or not to error when the sync status is Warning
         """
         super().__init__()
         self.sync_run_url = sync_run_url
@@ -58,9 +60,10 @@ class HightouchTrigger(BaseTrigger):
         self.sync_request_id = sync_request_id
         self.sync_slug = sync_slug
         self.connection_id = connection_id
-        self.poll_interval = poll_interval
         self.timeout = timeout
         self.end_from_trigger = end_from_trigger
+        self.poll_interval = poll_interval
+        self.error_on_warning = error_on_warning
         self.hook = HightouchAsyncHook(hightouch_conn_id=self.connection_id)
 
     def serialize(self) -> Tuple[str, Dict[str, Any]]:
@@ -82,6 +85,7 @@ class HightouchTrigger(BaseTrigger):
                 "timeout": self.timeout,
                 "end_from_trigger": self.end_from_trigger,
                 "poll_interval": self.poll_interval,
+                "error_on_warning": self.error_on_warning,
             },
         )
 
@@ -118,7 +122,10 @@ class HightouchTrigger(BaseTrigger):
                 status = response[0].get("status")
 
                 # Handle different sync statuses
-                if status in ["success", "completed"]:
+                if (
+                    status in ["success", "completed"]
+                    or (status == "warning" and not self.error_on_warning)
+                ):
                     self.log.info(f"{self.sync_run_url} finished with status {status}!")
                     yield TaskSuccessEvent()
                     return
