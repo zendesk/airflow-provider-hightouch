@@ -8,6 +8,11 @@ from airflow.triggers.base import (
     TaskFailedEvent,
 )
 from airflow_provider_hightouch.hooks.hightouch import HightouchAsyncHook
+from airflow_provider_hightouch.consts import (
+    PENDING_STATUSES,
+    SUCCESS,
+    WARNING,
+)
 
 
 class HightouchTrigger(BaseTrigger):
@@ -123,20 +128,20 @@ class HightouchTrigger(BaseTrigger):
 
                 # Handle different sync statuses
                 if (
-                    status in ["success", "completed"]
-                    or (status == "warning" and not self.error_on_warning)
+                    status == SUCCESS
+                    or (status == WARNING and not self.error_on_warning)
                 ):
                     self.log.info(f"{self.sync_run_url} finished with status {status}!")
                     yield TaskSuccessEvent()
                     return
 
-                elif status in ["queued", "processing", "querying"]:
+                elif status in PENDING_STATUSES:
                     self.log.info(
                         f"Sync is {status}... Sleeping for {self.poll_interval} seconds."
                     )
                     await asyncio.sleep(self.poll_interval)
 
-                # Will capture "failed" and "error" statuses, along with new statuses
+                # Will capture terminal statuses along with new statuses
                 else:
                     self.log.error(
                         f"{self.sync_run_url} finished with status {status}!\n"
