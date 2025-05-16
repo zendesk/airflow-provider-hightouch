@@ -132,7 +132,7 @@ class HightouchTrigger(BaseTrigger):
                     or (status == WARNING and not self.error_on_warning)
                 ):
                     self.log.info(f"{self.sync_run_url} finished with status {status}!")
-                    yield TaskSuccessEvent()
+                    yield TaskSuccessEvent(xcoms={"sync_id": self.sync_id, "sync_request_id": self.sync_request_id})
                     return
 
                 elif status in PENDING_STATUSES:
