@@ -1,4 +1,5 @@
 import datetime
+import aiohttp
 import asyncio
 import time
 from typing import Any, Dict, List, Optional
@@ -339,6 +340,7 @@ class HightouchAsyncHook(HttpAsyncHook):
             try:
                 self.method = method
                 response = await self.run(
+                    session=aiohttp.ClientSession(),
                     endpoint=urljoin(self.api_base_url, endpoint),
                     data=data,
                     headers=headers,
