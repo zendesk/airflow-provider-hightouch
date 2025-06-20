@@ -1,4 +1,5 @@
 import datetime
+import aiohttp
 import asyncio
 import time
 from typing import Any, Dict, List, Optional
@@ -338,12 +339,14 @@ class HightouchAsyncHook(HttpAsyncHook):
         while True:
             try:
                 self.method = method
-                response = await self.run(
-                    endpoint=urljoin(self.api_base_url, endpoint),
-                    data=data,
-                    headers=headers,
-                )
-                resp_dict = await response.json()
+                async with aiohttp.ClientSession() as session:
+                    response = await self.run(
+                        session=session,
+                        endpoint=urljoin(self.api_base_url, endpoint),
+                        data=data,
+                        headers=headers,
+                    )
+                    resp_dict = await response.json()
                 return resp_dict["data"] if "data" in resp_dict else resp_dict
             except AirflowException as e:
                 self.log.error("Request to Hightouch API failed: %s", e)
